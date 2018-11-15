@@ -1,4 +1,4 @@
-package model
+package models
 
 import (
 	"gopkg.in/mgo.v2/bson"
@@ -13,11 +13,18 @@ type User struct {
 }
 
 type UserSignIn struct {
-	UserName string `bson:"username" json:"username"`
-	Password string `bson:"password" json:"password"`
+	UserName string `json:"username"`
+	Password string `json:"password"`
 }
 
 type UserResponse struct {
-	IsSuccess bool   `bson:"success" json:"success"`
-	Token     string `bson:"token" json:"token"`
+	IsSuccess bool   `json:"success"`
+	Token     string `json:"token"`
+}
+
+type UserInfo struct {
+	ID       bson.ObjectId `bson:"_id" json:"id"`
+	UserName string        `bson:"username" json:"username"`
+	DOB      string        `bson:"dob" json:"dob"`
+	FullName string        `bson:"fullname" json:"fullname"`
 }

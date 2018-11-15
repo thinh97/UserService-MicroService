@@ -4,24 +4,44 @@ import (
 	"log"
 	"net/http"
 
-	"./db"
-	"./router"
-	"github.com/gorilla/mux"
+	"./config"
+	"./repository"
+	"./routers"
+	"github.com/urfave/negroni"
 	mgo "gopkg.in/mgo.v2"
 )
 
 func main() {
-	r := mux.NewRouter()
-	router.InitRouterUser(r)
+	appConfig, err := config.GetConfig()
+	if err != nil {
+		log.Fatal("Load config error: ", err)
+	}
+	router := routers.InitRoutes()
+	n := negroni.Classic()
+	n.UseHandler(router)
+	// mongoDBDialInfo := &mgo.DialInfo{
+	// 	Addrs:    []string{appConfig.MongoDbHost},
+	// 	Timeout:  60 * time.Second,
+	// 	Database: appConfig.DatabaseName,
+	// 	Username: appConfig.DbUserName,
+	// 	Password: appConfig.DbPassword,
+	// }
+	dialInfo, err0 := mgo.ParseURL(appConfig.ConnectionString)
+	if err0 != nil {
+		log.Fatal("Parse connection string error: ", err)
+	}
 
-	session, err := mgo.Dial("mongodb://admin:123456789x@ds157493.mlab.com:57493/microservice")
+	session, err := mgo.DialWithInfo(dialInfo)
 	defer session.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Connect DB error: ", err)
 	}
-	userdao.InitDb(session)
+	userRepository.InitDb(session)
 
-	if err := http.ListenAndServe(":3001", r); err != nil {
-		log.Fatal(err)
+	server := &http.Server{
+		Addr:    appConfig.Host + ":" + appConfig.Port,
+		Handler: n,
 	}
+	log.Println("Server started...")
+	server.ListenAndServe()
 }
